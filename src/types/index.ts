@@ -17,6 +17,8 @@ export interface WindowScene {
   treeDensity: TreeDensity
   pedestrianStatus: PedestrianStatus
   note: string
+  /** 若本条为「照上一条续记」，指向其来源记录；来源被移除后清除，本条转为独立记录 */
+  continuedFromId?: string
 }
 
 export interface SceneFormData {

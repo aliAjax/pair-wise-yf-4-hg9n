@@ -19,7 +19,12 @@ export function saveScene(scene: WindowScene): void {
 }
 
 export function deleteScene(id: string): void {
-  const scenes = getAllScenes().filter((s) => s.id !== id)
+  // 来源记录被移除后，已有续记继续保留并转为独立记录
+  const scenes = getAllScenes()
+    .filter((s) => s.id !== id)
+    .map((s) =>
+      s.continuedFromId === id ? { ...s, continuedFromId: undefined } : s
+    )
   localStorage.setItem(STORAGE_KEY, JSON.stringify(scenes))
 }
 

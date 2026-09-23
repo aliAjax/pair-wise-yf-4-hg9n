@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Search, Route, X, Trash2, Clock, MapPin } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Search, Route, X, Trash2, Clock, MapPin, CornerDownRight } from 'lucide-react'
 import { useSceneStore } from '@/store/useSceneStore'
 import {
   formatTimestamp,
@@ -11,7 +11,7 @@ import {
 import type { WindowScene } from '@/types'
 
 export default function TimelinePage() {
-  const { routeNames, selectedRoute, currentRouteScenes, selectRoute, loadAll, deleteScene } =
+  const { routeNames, selectedRoute, currentRouteScenes, selectRoute, loadAll, deleteScene, scenes } =
     useSceneStore()
   const [search, setSearch] = useState('')
   const [detailScene, setDetailScene] = useState<WindowScene | null>(null)
@@ -19,6 +19,14 @@ export default function TimelinePage() {
   useEffect(() => {
     loadAll()
   }, [loadAll])
+
+  // 续记来源索引；来源已被移除的旧记录按无来源处理
+  const sceneById = useMemo(
+    () => new Map(scenes.map((s) => [s.id, s])),
+    [scenes]
+  )
+  const sourceOf = (scene: WindowScene) =>
+    scene.continuedFromId ? sceneById.get(scene.continuedFromId) ?? null : null
 
   const filteredRoutes = routeNames.filter((r) =>
     r.toLowerCase().includes(search.toLowerCase())
@@ -117,6 +125,12 @@ export default function TimelinePage() {
                       <span className="mx-1 text-teal-700">·</span>
                       <span className="text-xs">{scene.seatDirection}侧</span>
                     </div>
+                    {sourceOf(scene) && (
+                      <div className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-dusk-400/10 px-2 py-0.5 text-[10px] text-dusk-300">
+                        <CornerDownRight className="w-3 h-3" />
+                        续自 {formatTimestamp(sourceOf(scene)!.timestamp)} 的记录
+                      </div>
+                    )}
                     {scene.note && (
                       <p className="text-xs text-mist-400 line-clamp-2">
                         {scene.note}
@@ -173,6 +187,15 @@ export default function TimelinePage() {
                 <span className="text-teal-600">·</span>
                 <span>{getTimeOfDay(detailScene.timestamp)}</span>
               </div>
+              {sourceOf(detailScene) && (
+                <div className="flex items-center gap-2 text-mist-300">
+                  <CornerDownRight className="w-4 h-4 text-dusk-400" />
+                  <span>
+                    续记自 {formatTimestamp(sourceOf(detailScene)!.timestamp)}
+                    （{sourceOf(detailScene)!.segment}）
+                  </span>
+                </div>
+              )}
               <div className="flex items-center gap-3 text-mist-300">
                 {getTreeIcon(detailScene.treeDensity)}
                 <span>{detailScene.treeDensity}</span>
