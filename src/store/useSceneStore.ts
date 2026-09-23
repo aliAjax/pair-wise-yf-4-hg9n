@@ -17,7 +17,7 @@ interface SceneState {
   randomScene: WindowScene | null
 
   loadAll: () => void
-  saveScene: (data: SceneFormData) => void
+  saveScene: (data: SceneFormData, continuedFromId?: string) => void
   deleteScene: (id: string) => void
   selectRoute: (routeName: string) => void
   refreshRandom: () => void
@@ -36,11 +36,12 @@ export const useSceneStore = create<SceneState>((set) => ({
     set({ scenes, routeNames })
   },
 
-  saveScene: (data: SceneFormData) => {
+  saveScene: (data, continuedFromId) => {
     const scene: WindowScene = {
       ...data,
       id: crypto.randomUUID(),
       timestamp: new Date().toISOString(),
+      ...(continuedFromId ? { continuedFromId } : {}),
     }
     storageSaveScene(scene)
     const scenes = getAllScenes()

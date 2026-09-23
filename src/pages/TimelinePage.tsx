@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Search, Route, X, Trash2, Clock, MapPin } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Search, Route as RouteIcon, X, Trash2, Clock, MapPin, History } from 'lucide-react'
 import { useSceneStore } from '@/store/useSceneStore'
 import {
   formatTimestamp,
@@ -11,7 +11,7 @@ import {
 import type { WindowScene } from '@/types'
 
 export default function TimelinePage() {
-  const { routeNames, selectedRoute, currentRouteScenes, selectRoute, loadAll, deleteScene } =
+  const { scenes, routeNames, selectedRoute, currentRouteScenes, selectRoute, loadAll, deleteScene } =
     useSceneStore()
   const [search, setSearch] = useState('')
   const [detailScene, setDetailScene] = useState<WindowScene | null>(null)
@@ -19,6 +19,18 @@ export default function TimelinePage() {
   useEffect(() => {
     loadAll()
   }, [loadAll])
+
+  // id -> 记录，用于解析续记来源；来源已被移除时查不到，按无来源处理
+  const sceneMap = useMemo(() => {
+    const map = new Map<string, WindowScene>()
+    for (const scene of scenes) map.set(scene.id, scene)
+    return map
+  }, [scenes])
+
+  const getSource = (scene: WindowScene): WindowScene | null =>
+    scene.continuedFromId ? (sceneMap.get(scene.continuedFromId) ?? null) : null
+
+  const detailSource = detailScene ? getSource(detailScene) : null
 
   const filteredRoutes = routeNames.filter((r) =>
     r.toLowerCase().includes(search.toLowerCase())
@@ -72,7 +84,7 @@ export default function TimelinePage() {
                     : 'bg-teal-900 text-mist-300 hover:bg-teal-800'
                 }`}
               >
-                <Route className="mr-1 inline w-3 h-3" />
+                <RouteIcon className="mr-1 inline w-3 h-3" />
                 {name}
               </button>
             ))}
@@ -90,7 +102,9 @@ export default function TimelinePage() {
           <div className="relative pl-8">
             <div className="absolute left-3 top-0 bottom-0 w-px bg-teal-800" />
             <div className="space-y-6">
-              {sorted.map((scene) => (
+              {sorted.map((scene) => {
+                const source = getSource(scene)
+                return (
                 <div key={scene.id} className="relative flex gap-4">
                   <div className="absolute -left-5 top-1 h-2.5 w-2.5 rounded-full bg-dusk-400 ring-4 ring-teal-950" />
                   <div className="w-20 shrink-0 pt-0.5 text-right">
@@ -117,6 +131,12 @@ export default function TimelinePage() {
                       <span className="mx-1 text-teal-700">·</span>
                       <span className="text-xs">{scene.seatDirection}侧</span>
                     </div>
+                    {source && (
+                      <div className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-dusk-400/10 px-2 py-0.5 text-[10px] text-dusk-300">
+                        <History className="w-3 h-3" />
+                        续记自 {source.routeName} · {source.segment} · {formatTimestamp(source.timestamp)}
+                      </div>
+                    )}
                     {scene.note && (
                       <p className="text-xs text-mist-400 line-clamp-2">
                         {scene.note}
@@ -133,7 +153,8 @@ export default function TimelinePage() {
                     </div>
                   </button>
                 </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         )}
@@ -173,6 +194,15 @@ export default function TimelinePage() {
                 <span className="text-teal-600">·</span>
                 <span>{getTimeOfDay(detailScene.timestamp)}</span>
               </div>
+              {detailSource && (
+                <div className="flex items-center gap-2 rounded-lg bg-dusk-400/10 px-3 py-2 text-xs text-dusk-300">
+                  <History className="w-4 h-4 shrink-0" />
+                  <span>
+                    续记自 {detailSource.routeName} · {detailSource.segment} ·{' '}
+                    {formatTimestamp(detailSource.timestamp)}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center gap-3 text-mist-300">
                 {getTreeIcon(detailScene.treeDensity)}
                 <span>{detailScene.treeDensity}</span>

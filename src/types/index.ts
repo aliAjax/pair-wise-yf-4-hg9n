@@ -17,7 +17,20 @@ export interface WindowScene {
   treeDensity: TreeDensity
   pedestrianStatus: PedestrianStatus
   note: string
+  /** 续记来源记录的 id；来源被移除后此值保留，按无来源（独立记录）处理 */
+  continuedFromId?: string
 }
+
+/** 续记时与来源对比的字段，至少改动其中一项才能保存 */
+export const CONTINUATION_DIFF_KEYS = [
+  'segment',
+  'weather',
+  'treeDensity',
+  'pedestrianStatus',
+  'note',
+] as const
+
+export type ContinuationDiffKey = (typeof CONTINUATION_DIFF_KEYS)[number]
 
 export interface SceneFormData {
   routeName: string
